@@ -8,10 +8,13 @@
 import UIKit
 
 final class AlertPresenter {
+    
     private weak var presenter: UIViewController?
+    
     init(presenter: UIViewController) {
-            self.presenter = presenter
-        }
+        self.presenter = presenter
+    }
+    
     func showResultAlert(result: AlertModel) {
         let alert = UIAlertController(
             title: result.title,

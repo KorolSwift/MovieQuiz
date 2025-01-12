@@ -1,9 +1,10 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
+final class MovieQuizViewController: UIViewController,
+                                     QuestionFactoryDelegate {
     
-    @IBOutlet var yesButton: UIButton!
-    @IBOutlet var noButton: UIButton!
+    @IBOutlet private var yesButton: UIButton!
+    @IBOutlet private var noButton: UIButton!
     @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var imageView: UIImageView!
     @IBOutlet private var textLabel: UILabel!
@@ -13,7 +14,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private let questionsAmount: Int = 10
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
-    private var alertPresenter: AlertPresenter!
+    private var alertPresenter: AlertPresenter?
     private var currentQuestion: QuizQuestion?
     private let statisticService: StatisticServiceProtocol = StatisticService()
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -45,14 +46,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
     }
     
-    private func blockButtons() {
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
-    }
-    
-    private func unblockButtons() {
-        yesButton.isEnabled = true
-        noButton.isEnabled = true
+    private func changeStateButton(isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
     }
     
     private func showFirstQuestion() {
@@ -95,14 +91,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                     self.currentQuestionIndex = 0
                     self.correctAnswers = 0
                     self.questionFactory.requestNextQuestion()
-                    self.unblockButtons()
+                    self.changeStateButton(isEnabled: true)
                 }
             )
+            guard let alertPresenter = alertPresenter else { return }
             alertPresenter.showResultAlert(result: alertModel)
         } else {
             currentQuestionIndex += 1
             self.questionFactory.requestNextQuestion()
-            unblockButtons()
+            changeStateButton(isEnabled: true)
         }
     }
     
@@ -115,13 +112,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        blockButtons()
+        changeStateButton(isEnabled: false)
         guard let currentQuestion = currentQuestion else { return }
         showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        blockButtons()
+        changeStateButton(isEnabled: false)
         guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)

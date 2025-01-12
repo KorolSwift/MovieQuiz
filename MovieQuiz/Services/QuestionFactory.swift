@@ -6,7 +6,8 @@
 //
 import Foundation
 
-class QuestionFactory: QuestionFactoryProtocol { 
+final class QuestionFactory: QuestionFactoryProtocol {
+    
     private let questions: [QuizQuestion] = [
         QuizQuestion (
             image: "The Godfather",
@@ -51,6 +52,7 @@ class QuestionFactory: QuestionFactoryProtocol {
     ]
     
     private var remainingQuestions: [QuizQuestion] = []
+    
     func requestNextQuestion() {
         if remainingQuestions.isEmpty {
             remainingQuestions = questions.shuffled()
@@ -62,7 +64,8 @@ class QuestionFactory: QuestionFactoryProtocol {
         delegate?.didReceiveNextQuestion(question: question)
     }
     
-    weak var delegate: QuestionFactoryDelegate?
+    private weak var delegate: QuestionFactoryDelegate?
+    
     func setUp(delegate: QuestionFactoryDelegate) {
         self.delegate = delegate
     }
