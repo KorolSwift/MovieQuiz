@@ -30,13 +30,15 @@ final class MovieQuizViewController: UIViewController,
         imageView.layer.masksToBounds = true
         imageView.layer.cornerRadius = 20
         questionFactory.loadData()
+        activityIndicator.hidesWhenStopped = true
     }
     
     // MARK: - QuestionFactoryDelegate
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else {
+        guard let question else {
             return
         }
+        self.hideLoadingIndicator()
         currentQuestion = question
         let viewModel = convert(model: question)
         
@@ -70,7 +72,7 @@ final class MovieQuizViewController: UIViewController,
         imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
             self.showNextQuestionOrResults()
         }
     }
@@ -87,18 +89,20 @@ final class MovieQuizViewController: UIViewController,
                 message: message,
                 buttonText: "Сыграть еще раз",
                 completion: { [weak self] in
-                    guard let self = self else { return }
+                    guard let self else { return }
                     self.currentQuestionIndex = 0
                     self.correctAnswers = 0
                     self.questionFactory?.requestNextQuestion()
+                    self.showLoadingIndicator()
                     self.changeStateButton(isEnabled: true)
                 }
             )
-            guard let alertPresenter = alertPresenter else { return }
+            guard let alertPresenter else { return }
             alertPresenter.showResultAlert(result: alertModel)
         } else {
             currentQuestionIndex += 1
             self.questionFactory?.requestNextQuestion()
+            showLoadingIndicator()
             changeStateButton(isEnabled: true)
         }
     }
@@ -111,12 +115,10 @@ final class MovieQuizViewController: UIViewController,
     }
     
     private func showLoadingIndicator() {
-        activityIndicator.isHidden = false
         activityIndicator.startAnimating()
     }
     
     private func hideLoadingIndicator() {
-        activityIndicator.isHidden = true
         activityIndicator.stopAnimating()
     }
     
@@ -129,14 +131,14 @@ final class MovieQuizViewController: UIViewController,
             message: message,
             buttonText: "Попробовать еще раз"
             ) { [weak self] in
-                guard let self = self else { return }
+                guard let self else { return }
                 self.showLoadingIndicator()
                 self.currentQuestionIndex = 0
                 self.correctAnswers = 0
                 self.questionFactory?.loadData()
                 self.changeStateButton(isEnabled: true)
                 }
-        guard let alertPresenter = alertPresenter else { return }
+        guard let alertPresenter else { return }
         alertPresenter.showResultAlert(result: alertModel)
     }
     
@@ -152,13 +154,13 @@ final class MovieQuizViewController: UIViewController,
 
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         changeStateButton(isEnabled: false)
-        guard let currentQuestion = currentQuestion else { return }
+        guard let currentQuestion else { return }
         showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         changeStateButton(isEnabled: false)
-        guard let currentQuestion = currentQuestion else { return }
+        guard let currentQuestion else { return }
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
