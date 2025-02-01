@@ -8,7 +8,6 @@
 import UIKit
 
 final class AlertPresenter {
-    
     private weak var presenter: UIViewController?
     
     init(presenter: UIViewController) {
