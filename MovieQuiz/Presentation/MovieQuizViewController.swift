@@ -13,9 +13,9 @@ final class MovieQuizViewController: UIViewController,
     private let presenter = MovieQuizPresenter()
     private var correctAnswers = 0
     private var questionFactory: QuestionFactoryProtocol?
-    private var alertPresenter: AlertPresenter?
-    private var currentQuestion: QuizQuestion?
-    private let statisticService: StatisticServiceProtocol = StatisticService()
+    var alertPresenter: AlertPresenter?
+    //    private var currentQuestion: QuizQuestion?
+//    private let statisticService: StatisticServiceProtocol = StatisticService()
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
@@ -25,7 +25,9 @@ final class MovieQuizViewController: UIViewController,
         super.viewDidLoad()
         let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         self.questionFactory = questionFactory
+        presenter.questionFactory = questionFactory
         self.alertPresenter = AlertPresenter(presenter: self)
+//        presenter.alertPresenter = self.alertPresenter
         showLoadingIndicator()
         imageView.layer.masksToBounds = true
         imageView.layer.cornerRadius = 20
@@ -34,20 +36,24 @@ final class MovieQuizViewController: UIViewController,
     }
     
     // MARK: - QuestionFactoryDelegate
+    //    func didReceiveNextQuestion(question: QuizQuestion?) {
+    //        guard let question else {
+    //            return
+    //        }
+    //        self.hideLoadingIndicator()
+    //        currentQuestion = question
+    //        let viewModel = presenter.convert(model: question)
+    //
+    //        DispatchQueue.main.async { [weak self] in
+    //            self?.show(quiz: viewModel)
+    //        }
+    //    }
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question else {
-            return
-        }
-        self.hideLoadingIndicator()
-        currentQuestion = question
-        let viewModel = presenter.convert(model: question)
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: viewModel)
-        }
+        presenter.didReceiveNextQuestion(question: question)
     }
     
-    private func changeStateButton(isEnabled: Bool) {
+    func changeStateButton(isEnabled: Bool) {
         noButton.isEnabled = isEnabled
         yesButton.isEnabled = isEnabled
     }
@@ -56,7 +62,9 @@ final class MovieQuizViewController: UIViewController,
         questionFactory?.requestNextQuestion()
     }
     
-    private func show(quiz step: QuizStepViewModel) {
+    func show(quiz step: QuizStepViewModel) {
+        print("🟢 show(quiz:) вызван, отображаем вопрос: \(step.question)") // 👉 Добавь этот принт
+
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
@@ -73,46 +81,46 @@ final class MovieQuizViewController: UIViewController,
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self else { return }
-            self.showNextQuestionOrResults()
+            self.presenter.showNextQuestionOrResults()
         }
     }
     
-    private func showNextQuestionOrResults() {
-        if presenter.isLastQuestion() {
-            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
-            let bestGameDate =  statisticService.bestGame.date.dateTimeString
-            
-            let message = "Ваш результат: \(correctAnswers)/\(presenter.questionsAmount) \nКоличество сыгранных квизов: \(statisticService.gamesCount) \nРекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(bestGameDate)) \nСредняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
-            
-            let alertModel = AlertModel(
-                title: "Этот раунд окончен!",
-                message: message,
-                buttonText: "Сыграть еще раз",
-                completion: { [weak self] in
-                    guard let self else { return }
-                    self.presenter.resetQuestionIndex()
-                    self.correctAnswers = 0
-                    self.questionFactory?.requestNextQuestion()
-                    self.showLoadingIndicator()
-                    self.changeStateButton(isEnabled: true)
-                }
-            )
-            guard let alertPresenter else { return }
-            alertPresenter.showResultAlert(result: alertModel)
-//            return
-        } else {
-            presenter.switchToNextQuestion()
-            self.questionFactory?.requestNextQuestion()
-            showLoadingIndicator()
-            changeStateButton(isEnabled: true)
-        }
-    }
+//    private func showNextQuestionOrResults() {
+//        if presenter.isLastQuestion() {
+//            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
+//            let bestGameDate =  statisticService.bestGame.date.dateTimeString
+//            
+//            let message = "Ваш результат: \(correctAnswers)/\(presenter.questionsAmount) \nКоличество сыгранных квизов: \(statisticService.gamesCount) \nРекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(bestGameDate)) \nСредняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
+//            
+//            let alertModel = AlertModel(
+//                title: "Этот раунд окончен!",
+//                message: message,
+//                buttonText: "Сыграть еще раз",
+//                completion: { [weak self] in
+//                    guard let self else { return }
+//                    self.presenter.resetQuestionIndex()
+//                    self.correctAnswers = 0
+//                    self.questionFactory?.requestNextQuestion()
+//                    self.showLoadingIndicator()
+//                    self.changeStateButton(isEnabled: true)
+//                }
+//            )
+//            guard let alertPresenter else { return }
+//            alertPresenter.showResultAlert(result: alertModel)
+//            //            return
+//        } else {
+//            presenter.switchToNextQuestion()
+//            self.questionFactory?.requestNextQuestion()
+//            showLoadingIndicator()
+//            changeStateButton(isEnabled: true)
+//        }
+//    }
     
-    private func showLoadingIndicator() {
+    func showLoadingIndicator() {
         activityIndicator.startAnimating()
     }
     
-    private func hideLoadingIndicator() {
+    func hideLoadingIndicator() {
         activityIndicator.stopAnimating()
     }
     
@@ -124,14 +132,14 @@ final class MovieQuizViewController: UIViewController,
             title: "Ошибка",
             message: message,
             buttonText: "Попробовать еще раз"
-            ) { [weak self] in
-                guard let self else { return }
-                self.showLoadingIndicator()
-                self.presenter.resetQuestionIndex()
-                self.correctAnswers = 0
-                self.questionFactory?.loadData()
-                self.changeStateButton(isEnabled: true)
-                }
+        ) { [weak self] in
+            guard let self else { return }
+            self.showLoadingIndicator()
+            self.presenter.resetQuestionIndex()
+            self.correctAnswers = 0
+            self.questionFactory?.loadData()
+            self.changeStateButton(isEnabled: true)
+        }
         guard let alertPresenter else { return }
         alertPresenter.showResultAlert(result: alertModel)
     }
@@ -145,21 +153,16 @@ final class MovieQuizViewController: UIViewController,
         hideLoadingIndicator()
         showNetworkError(message: error.localizedDescription)
     }
-
+    
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        presenter.currentQuestion = currentQuestion
+//        presenter.currentQuestion = currentQuestion
         presenter.yesButtonClicked()
         changeStateButton(isEnabled: false)
-//        guard let currentQuestion else { return }
-//        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         changeStateButton(isEnabled: false)
-        presenter.currentQuestion = currentQuestion
+//        presenter.currentQuestion = currentQuestion
         presenter.noButtonClicked()
-//        guard let currentQuestion else { return }
-//        let givenAnswer = false
-//        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
 }
