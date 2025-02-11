@@ -55,7 +55,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
             let randomRatingValue = Int.random(in: 4...8)
             let rating = Float(movie.rating) ?? 0
             let words = ["больше", "меньше"]
-            let randomWord = words.randomElement() ?? words[0] // Если массив вдруг пустой
+            let randomWord = words.randomElement() ?? words[0] 
             
             let correctAnswer = randomWord == "больше" ? rating > Float(randomRatingValue) : rating < Float(randomRatingValue)
             
