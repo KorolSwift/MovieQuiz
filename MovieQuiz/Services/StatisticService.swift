@@ -3,7 +3,7 @@
 //  MovieQuiz
 //
 //  Created by Ди Di on 08/01/25.
-//
+
 import Foundation
 
 final class StatisticService: StatisticServiceProtocol {

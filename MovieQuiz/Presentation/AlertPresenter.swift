@@ -3,30 +3,32 @@
 //  MovieQuiz
 //
 //  Created by Ди Di on 06/01/25.
-//
+
 
 import UIKit
 
 final class AlertPresenter {
-    private weak var presenter: UIViewController?
+    private weak var viewController: MovieQuizViewController?
     
-    init(presenter: UIViewController) {
-        self.presenter = presenter
+    init(presenter: MovieQuizViewController) {
+        self.viewController = presenter
     }
     
     func showResultAlert(result: AlertModel) {
+        guard let viewController = viewController else { return }
+        
         let alert = UIAlertController(
             title: result.title,
             message: result.message,
             preferredStyle: .alert
         )
         alert.view.accessibilityIdentifier = "gameResults"
-
+        
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
-            result.completion() 
+            result.completion()
         }
         
         alert.addAction(action)
-        presenter?.present(alert, animated: true, completion: nil)
+        viewController.present(alert, animated: true, completion: nil)
     }
 }

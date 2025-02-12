@@ -3,7 +3,7 @@
 //  MovieQuiz
 //
 //  Created by Ди Di on 26/01/25.
-//
+
 
 import Foundation
 
@@ -32,5 +32,3 @@ struct NetworkClient: NetworkRouting {
         task.resume()
     }
 }
-
-

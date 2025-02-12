@@ -3,7 +3,7 @@
 //  MovieQuiz
 //
 //  Created by Ди Di on 06/01/25.
-//
+
 
 struct AlertModel {
     let title: String

@@ -3,7 +3,7 @@
 //  MovieQuiz
 //
 //  Created by Ди Di on 02/02/25.
-//
+
 
 import Foundation
 import XCTest
@@ -16,19 +16,15 @@ class MoviesLoaderTests: XCTestCase {
         let stubNetworkClient = StubNetworkClient(emulateError: false)
         let loader = MoviesLoader(networkClient: stubNetworkClient)
         //        When
-        // так как функция загрузки фильмов — асинхронная, нужно ожидание
         let expectation = expectation(description: "Loading expectation")
         loader.loadMovies { result in
-            
             //        Then
             switch result {
             case .success(let movies):
-                // давайте проверим, что пришло, например, два фильма — ведь в тестовых данных их всего два
                 XCTAssertEqual(movies.items.count, 2)
-                // сравниваем данные с тем, что мы предполагали
                 expectation.fulfill()
-            case .failure(_): // мы не ожидаем, что пришла ошибка; если она появится, надо будет провалить тест
-                XCTFail("Unexpected failure") // эта функция проваливает тест
+            case .failure(_):
+                XCTFail("Unexpected failure")
             }
         }
         waitForExpectations(timeout: 1)
@@ -41,13 +37,13 @@ class MoviesLoaderTests: XCTestCase {
         //        When
         let expectation = expectation(description: "Loading expectation")
         loader.loadMovies { result in
-        //        Then
+            //        Then
             switch result {
             case .failure(let error):
                 XCTAssertNotNil(error)
                 expectation.fulfill()
             case .success(_):
-                XCTFail("Unexpected failure") 
+                XCTFail("Unexpected failure")
             }
         }
         waitForExpectations(timeout: 1)
@@ -101,4 +97,4 @@ class MoviesLoaderTests: XCTestCase {
         }
     }
 }
-    
+
