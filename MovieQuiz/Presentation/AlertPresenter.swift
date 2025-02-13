@@ -10,8 +10,8 @@ import UIKit
 final class AlertPresenter {
     private weak var viewController: MovieQuizViewController?
     
-    init(presenter: MovieQuizViewController) {
-        self.viewController = presenter
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
     }
     
     func showResultAlert(result: AlertModel) {
@@ -22,7 +22,8 @@ final class AlertPresenter {
             message: result.message,
             preferredStyle: .alert
         )
-        alert.view.accessibilityIdentifier = "gameResults"
+        
+        alert.view.accessibilityIdentifier = AccessibilityIdentifiers.gameResults
         
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
             result.completion()

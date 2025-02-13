@@ -4,13 +4,11 @@
 //
 //  Created by Ди Di on 02/02/25.
 
-
 import XCTest
-import Foundation
-
 @testable import MovieQuiz
 
-class ArrayTests: XCTestCase {
+
+final class ArrayTests: XCTestCase {
     func testGetValueInRange() throws {
         // Given
         let array = [1, 1, 2, 3, 5]

@@ -4,12 +4,11 @@
 //
 //  Created by Ди Di on 02/02/25.
 
-
-import Foundation
 import XCTest
 @testable import MovieQuiz
 
-class MoviesLoaderTests: XCTestCase {
+
+final class MoviesLoaderTests: XCTestCase {
     
     func testSuccessLoading() throws {
         //        Given

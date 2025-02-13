@@ -21,14 +21,14 @@ protocol MovieQuizViewControllerProtocol: AnyObject {
     func changeStateButton(isEnabled: Bool)
 }
 
-class MovieQuizPresenter: QuestionFactoryDelegate {
+final class MovieQuizPresenter: QuestionFactoryDelegate {
     private let questionsAmount: Int = 10
     private var currentQuestionIndex = 0
     private var currentQuestion: QuizQuestion?
     private weak var viewController: MovieQuizViewControllerProtocol?
     private var correctAnswers = 0
     private var questionFactory: QuestionFactoryProtocol?
-    private let statisticService: StatisticServiceProtocol!
+    private let statisticService: StatisticServiceProtocol?
     var alertPresenter: AlertPresenter?
     
     init(viewController: MovieQuizViewControllerProtocol) {
@@ -39,40 +39,23 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
         viewController.showLoadingIndicator()
     }
     
-    func isLastQuestion() -> Bool {
-        currentQuestionIndex == questionsAmount - 1
-    }
-    
-    func restartGame() {
-        currentQuestionIndex = 0
-        correctAnswers = 0
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func switchToNextQuestion() {
-        currentQuestionIndex += 1
-    }
-    
-    func convert(model: QuizQuestion) -> QuizStepViewModel {
-        QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-    }
-    
-    func yesButtonClicked() {
-        didAnswer(isYes: true)
-    }
-    
-    func noButtonClicked() {
-        didAnswer(isYes: false)
+    func answerButtonClicked(isYes: Bool) {
+        didAnswer(isYes: isYes)
     }
     
     private func didAnswer(isYes: Bool) {
         guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = isYes
+        proceedWithAnswer(isCorrect: isYes == currentQuestion.correctAnswer)
+    }
+    
+    private func proceedWithAnswer(isCorrect: Bool) {
+        didAnswer(isCorrectAnswer: isCorrect)
+        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
         
-        proceedWithAnswer(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self else { return }
+            self.proceedToNextQuestionOrResults()
+        }
     }
     
     private func didAnswer(isCorrectAnswer: Bool) {
@@ -94,6 +77,13 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
+    func convert(model: QuizQuestion) -> QuizStepViewModel {
+        QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+    }
+    
     func didLoadDataFromServer() {
         questionFactory?.requestNextQuestion()
         viewController?.hideLoadingIndicator()
@@ -105,8 +95,8 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
     }
     
     private func proceedToNextQuestionOrResults() {
-        if self.isLastQuestion() {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
+        if isLastQuestion() {
+            statisticService?.store(correct: correctAnswers, total: questionsAmount)
             
             let message = makeResultsMessage()
             let alertModel = AlertModel(
@@ -118,40 +108,51 @@ class MovieQuizPresenter: QuestionFactoryDelegate {
                     self.restartGame()
                     self.correctAnswers = 0
                     self.viewController?.showLoadingIndicator()
-                    //                    self.viewController?.changeStateButton(isEnabled: true)
                 }
             )
             guard let alertPresenter else { return }
             alertPresenter.showResultAlert(result: alertModel)
         } else {
-            self.switchToNextQuestion()
+            switchToNextQuestion()
             viewController?.hideLoadingIndicator()
             questionFactory?.requestNextQuestion()
             viewController?.changeStateButton(isEnabled: true)
         }
     }
-    func makeResultsMessage() -> String {
+    
+    private func isLastQuestion() -> Bool {
+        currentQuestionIndex == questionsAmount - 1
+    }
+    
+    private func makeResultsMessage() -> String {
+        guard let statisticService = statisticService else {
+                return "Статистика недоступна"
+            }
+        
         let bestGame = statisticService.bestGame
         let totalPlaysCountLine = "Количество сыгранных квизов: \(statisticService.gamesCount)"
-        let currentGameResultLine = "Ваш результат: \(correctAnswers)\\\(questionsAmount)"
-        let bestGameInfoLine = "Рекорд: \(bestGame.correct)\\\(bestGame.total)"
-        + " (\(bestGame.date.dateTimeString))"
+        let currentGameResultLine = "Ваш результат: \(correctAnswers)/\(questionsAmount)"
+        let bestGameInfoLine = """
+            Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
+        """
         let averageAccuracyLine = "Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
-        
-        let resultMessage = [
-            currentGameResultLine, totalPlaysCountLine, bestGameInfoLine, averageAccuracyLine
-        ].joined(separator: "\n")
-        
+
+        let resultMessage = """
+        \(currentGameResultLine)
+        \(totalPlaysCountLine)
+        \(bestGameInfoLine)
+        \(averageAccuracyLine)
+        """
         return resultMessage
     }
     
-    private func proceedWithAnswer(isCorrect: Bool) {
-        didAnswer(isCorrectAnswer: isCorrect)
-        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self else { return }
-            self.proceedToNextQuestionOrResults()
-        }
+    func restartGame() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
+    }
+    
+    private func switchToNextQuestion() {
+        currentQuestionIndex += 1
     }
 }

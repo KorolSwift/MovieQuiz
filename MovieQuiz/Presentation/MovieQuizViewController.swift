@@ -9,19 +9,17 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     @IBOutlet private var textLabel: UILabel!
     @IBOutlet private var activityIndicator: UIActivityIndicatorView!
     
-    var presenter: MovieQuizPresenter!
+    var presenter: MovieQuizPresenter?
     private var alertPresenter: AlertPresenter?
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
-    }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         textLabel.text = ""
         
         presenter = MovieQuizPresenter(viewController: self)
-        alertPresenter = AlertPresenter(presenter: self)
-        presenter.alertPresenter = alertPresenter
+        alertPresenter = AlertPresenter(viewController: self)
+        presenter?.alertPresenter = alertPresenter
         showLoadingIndicator()
         
         imageView.layer.masksToBounds = true
@@ -35,15 +33,10 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
             message: result.text,
             buttonText: result.buttonText,
             completion: { [weak self] in
-                self?.presenter.restartGame()
+                self?.presenter?.restartGame()
             }
         )
         alertPresenter?.showResultAlert(result: alertModel)
-    }
-    
-    func changeStateButton(isEnabled: Bool) {
-        noButton.isEnabled = isEnabled
-        yesButton.isEnabled = isEnabled
     }
     
     func show(quiz step: QuizStepViewModel) {
@@ -66,6 +59,11 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
         activityIndicator.stopAnimating()
     }
     
+    func changeStateButton(isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
+    }
+    
     func showNetworkError(message: String) {
         hideLoadingIndicator()
         imageView.layer.borderWidth = 0
@@ -78,7 +76,7 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
         ) { [weak self] in
             guard let self else { return }
             self.showLoadingIndicator()
-            self.presenter.restartGame()
+            self.presenter?.restartGame()
             self.changeStateButton(isEnabled: true)
         }
         guard let alertPresenter else { return }
@@ -92,12 +90,12 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     }
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        presenter?.answerButtonClicked(isYes: true)
         view.isUserInteractionEnabled = false
-        presenter.yesButtonClicked()
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
+        presenter?.answerButtonClicked(isYes: false)
         view.isUserInteractionEnabled = false
-        presenter.noButtonClicked()
     }
 }
